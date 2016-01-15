@@ -193,10 +193,9 @@ var queryTorrents = function (filters) {
 };
 
 var queryDetails = function (id, movie) {
-    id = movie.aid || id;
+    id = movie.aid || id || movie.imdb;
     var url = baseURL + 'details/' + id + '?output=json';
-    console.info('Request to ARCHIVE.org API');
-    console.log(url);
+    console.info('Request to ARCHIVE.org API', url);
     return deferRequest(url).then(function (data) {
         return data;
     })
