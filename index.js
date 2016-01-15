@@ -1,5 +1,6 @@
 'use strict';
 var Q = require('q');
+var Generic = require('butter-provider');
 var moment = require('moment');
 var deferRequest = require('defer-request');
 var _ = require('lodash');
@@ -11,6 +12,16 @@ var Archive = function (args) {
 var baseURL = 'https://archive.org/';
 var URL = baseURL + 'advancedsearch.php';
 Archive.prototype.constructor = Archive;
+
+Archive.prototype.config = {
+    name: 'archive',
+    uniqueId: 'imdb_id',
+    tabName: 'Archive.org',
+    type: 'movie',
+    /* should be removed */
+    //subtitle: 'ysubs',
+    metadata: 'trakttv:movie-metadata'
+};
 
 function exctractYear(movie) {
     var metadata = movie.metadata;
@@ -172,29 +183,25 @@ var queryTorrents = function (filters) {
         params.page = filters.page;
     }
 
-    if (Settings.movies_quality !== 'all') { //XXX(xaiki): not supported
-        params.quality = Settings.movies_quality;
-    }
-
     return deferRequest(URL + '?sort[]=' + sort, params, true)
         .then(function (data) {
             return data.response.docs;
         })
         .catch(function (err) {
-            win.error('ARCHIVE.org error:', err);
+            console.error('ARCHIVE.org error:', err);
         });
 };
 
 var queryDetails = function (id, movie) {
     id = movie.aid || id;
     var url = baseURL + 'details/' + id + '?output=json';
-    win.info('Request to ARCHIVE.org API');
-    win.debug(url);
+    console.info('Request to ARCHIVE.org API');
+    console.log(url);
     return deferRequest(url).then(function (data) {
         return data;
     })
         .catch(function (err) {
-            win.error('Archive.org error', err);
+            console.error('Archive.org error', err);
         });
 };
 
@@ -237,16 +244,6 @@ var queryOMDbBulk = function (items) {
     });
 
     return deferred.promise;
-};
-
-Archive.prototype.config = {
-    name: 'Archive',
-    uniqueId: 'imdb_id',
-    tabName: 'Archive.org',
-    type: 'movie',
-    /* should be removed */
-    //subtitle: 'ysubs',
-    metadata: 'trakttv:movie-metadata'
 };
 
 Archive.prototype.extractIds = function (items) {
