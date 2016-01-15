@@ -5,7 +5,7 @@ var deferRequest = require('defer-request');
 var _ = require('lodash');
 
 var Archive = function (args) {
-    console.log ('got args', args)
+    console.debug ('got args', args)
 };
 
 var baseURL = 'https://archive.org/';
@@ -49,7 +49,7 @@ function formatOMDbforButter(movie) {
         title: movie.Title,
         genre: [movie.Genre],
         year: year,
-        rating: rating,
+        rating: rating == 'N/A' ? undefined : rating,
         runtime: runtime,
         image: undefined,
         cover: undefined,
@@ -109,7 +109,7 @@ function formatArchiveForButter(movie) {
         moment.duration(Number(mp4s[0].length) * 1000).asMinutes()
     );
 
-    console.log(runtime, movie);
+    console.debug('formatArchiveForButter', runtime, movie);
     var year = exctractYear(movie);
     var rating = extractRating(movie);
 
@@ -208,7 +208,7 @@ var queryOMDb = function (item) {
     var url = 'http://www.omdbapi.com/';
     return deferRequest(url, params).then(function (data) {
         if (data.Error) {
-            throw new Error(data);
+            throw new Error(data.Error);
         }
         data.archive = item;
         return data;
@@ -216,20 +216,20 @@ var queryOMDb = function (item) {
 };
 
 var queryOMDbBulk = function (items) {
-    console.error('before details', items);
+    console.debug('before details', items);
     var deferred = Q.defer();
     var promises = _.map(items, function (item) {
         return queryOMDb(item)
             .then(formatOMDbforButter)
             .catch(function (err) {
-                console.error('no data on OMDB, going back to archive', err, item);
+                console.warn('no data on OMDB, going back to archive', err, item);
                 return queryDetails(item.identifier, item)
                     .then(formatArchiveForButter);
             });
     });
 
     Q.all(promises).done(function (data) {
-        console.error('queryOMDbbulk', data);
+        console.debug('queryOMDbbulk', data);
         deferred.resolve({
             hasMore: (data.length < 50),
             results: data
