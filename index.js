@@ -17,7 +17,7 @@ Archive.prototype.config = {
     name: 'archive',
     uniqueId: 'imdb_id',
     tabName: 'Archive.org',
-    type: 'movie',
+    type: Generic.TabType.MOVIE,
     /* should be removed */
     //subtitle: 'ysubs',
     metadata: 'trakttv:movie-metadata'
