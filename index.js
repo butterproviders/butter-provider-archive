@@ -201,7 +201,7 @@ var queryTorrents = function (filters) {
 
 var queryDetails = function (id, movie) {
     id = movie.aid || id || movie.imdb;
-    var url = this.baseUrl + 'details/' + id + '?output=json';
+    var url = 'https://archive.org/' + 'details/' + id + '?output=json';
     console.info('Request to ARCHIVE.org API', url);
     return deferRequest(url).then(function (data) {
         return data;
