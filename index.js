@@ -147,7 +147,7 @@ function formatArchiveForButter(movie) {
     });
 }
 
-var queryTorrents = function (filters) {
+var queryTorrents = function (baseurl, filters) {
     var query = 'collection:moviesandfilms'; // OR mediatype:movies)';
     query += ' AND NOT collection:movie_trailers';
     query += ' AND -mediatype:collection';
@@ -155,7 +155,7 @@ var queryTorrents = function (filters) {
     query += ' AND year'; // this is actually: has year
     //        query += ' AND avg_rating';
 
-    var URL = this.baseUrl + 'advancedsearch.php';
+    var URL = baseurl + 'advancedsearch.php';
     var sort = 'downloads';
     //var sort = 'avg_rating';
 
@@ -257,7 +257,7 @@ Archive.prototype.extractIds = function (items) {
 };
 
 Archive.prototype.fetch = function (filters) {
-    return queryTorrents(filters)
+    return queryTorrents(this.baseUrl, filters)
         .then(queryOMDbBulk);
 };
 
