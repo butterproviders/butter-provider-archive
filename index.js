@@ -126,7 +126,7 @@ function formatArchiveForButter(movie) {
         moment.duration(Number(mp4s[0].length) * 1000).asMinutes()
     );
 
-    console.debug('formatArchiveForButter', runtime, movie);
+    console.error('formatArchiveForButter', runtime, movie);
     var year = exctractYear(movie);
     var rating = extractRating(movie);
 
@@ -212,6 +212,9 @@ var queryDetails = function (id, movie) {
 };
 
 var queryOMDb = function (item) {
+    if (! item.title || ! item.title.replace)
+        return Q(false);
+
     var params = {
         t: item.title.replace(/\s+\([0-9]+\)/, ''),
         r: 'json',
@@ -229,7 +232,7 @@ var queryOMDb = function (item) {
 };
 
 var queryOMDbBulk = function (items) {
-    console.debug('before details', items);
+    console.error('before details', items);
     var deferred = Q.defer();
     var promises = _.map(items, function (item) {
         return queryOMDb(item)
@@ -242,7 +245,7 @@ var queryOMDbBulk = function (items) {
     });
 
     Q.all(promises).done(function (data) {
-        console.debug('queryOMDbbulk', data);
+        console.error('queryOMDbbulk', data);
         deferred.resolve({
             hasMore: (data.length < 50),
             results: data
