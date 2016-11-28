@@ -252,10 +252,6 @@ var queryOMDbBulk = function (items) {
     return deferred.promise;
 };
 
-Archive.prototype.extractIds = function (items) {
-    return _.pluck(items.results, 'imdb');
-};
-
 Archive.prototype.fetch = function (filters) {
     return queryTorrents(this.baseUrl, filters)
         .then(queryOMDbBulk);
