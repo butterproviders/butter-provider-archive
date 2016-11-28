@@ -13,7 +13,6 @@ function Archive(args) {
 
     Generic.call(this, args);
     this.baseUrl = this.args.baseUrl || 'https://archive.org/';
-    this.URL = this.baseUrl + 'advancedsearch.php';
 }
 inherits(Archive, Generic);
 
@@ -156,6 +155,7 @@ var queryTorrents = function (filters) {
     query += ' AND year'; // this is actually: has year
     //        query += ' AND avg_rating';
 
+    var URL = this.baseUrl + 'advancedsearch.php';
     var sort = 'downloads';
     //var sort = 'avg_rating';
 
@@ -190,7 +190,7 @@ var queryTorrents = function (filters) {
         params.page = filters.page;
     }
 
-    return deferRequest(this.URL + '?sort[]=' + sort, params, true)
+    return deferRequest(URL + '?sort[]=' + sort, params, true)
         .then(function (data) {
             return data.response.docs;
         })
