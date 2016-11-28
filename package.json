@@ -1,6 +1,6 @@
 {
   "name": "butter-provider-archive",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A Butter provider for Archive.org",
   "main": "index.js",
   "scripts": {

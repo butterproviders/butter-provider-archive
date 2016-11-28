@@ -3,21 +3,28 @@ var Q = require('q');
 var Generic = require('butter-provider');
 var moment = require('moment');
 var deferRequest = require('defer-request');
+var inherits = require('util').inherits;
 var _ = require('lodash');
 
-var Archive = function (args) {
-    console.debug ('got args', args)
-};
+function Archive(args) {
+    if (!(this instanceof Archive)) {
+        return new Archive(args);
+    }
 
-var baseURL = 'https://archive.org/';
-var URL = baseURL + 'advancedsearch.php';
-Archive.prototype.constructor = Archive;
+    Generic.call(this, args);
+    this.baseUrl = this.args.baseUrl || 'https://archive.org/';
+    this.URL = this.baseUrl + 'advancedsearch.php';
+}
+inherits(Archive, Generic);
 
 Archive.prototype.config = {
     name: 'archive',
     uniqueId: 'imdb_id',
     tabName: 'Archive.org',
     type: Generic.TabType.MOVIE,
+    args: {
+        baseUrl: Generic.ArgType.STRING
+    },
     /* should be removed */
     //subtitle: 'ysubs',
     metadata: 'trakttv:movie-metadata'
@@ -183,7 +190,7 @@ var queryTorrents = function (filters) {
         params.page = filters.page;
     }
 
-    return deferRequest(URL + '?sort[]=' + sort, params, true)
+    return deferRequest(this.URL + '?sort[]=' + sort, params, true)
         .then(function (data) {
             return data.response.docs;
         })
@@ -194,7 +201,7 @@ var queryTorrents = function (filters) {
 
 var queryDetails = function (id, movie) {
     id = movie.aid || id || movie.imdb;
-    var url = baseURL + 'details/' + id + '?output=json';
+    var url = this.baseUrl + 'details/' + id + '?output=json';
     console.info('Request to ARCHIVE.org API', url);
     return deferRequest(url).then(function (data) {
         return data;
