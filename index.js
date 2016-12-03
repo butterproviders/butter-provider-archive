@@ -68,11 +68,8 @@ function formatOMDbforButter(movie) {
         year: year,
         rating: rating == 'N/A' ? undefined : rating,
         runtime: runtime,
-        image: undefined,
-        cover: undefined,
-        images: {
-            poster: undefined
-        },
+        backdrop: null,
+        poster: null,
         synopsis: movie.Plot,
         subtitle: {} // TODO
     };
@@ -137,11 +134,8 @@ function formatArchiveForButter(movie) {
         year: year,
         rating: rating,
         runtime: runtime,
-        image: movie.misc.image,
-        cover: movie.misc.image,
-        images: {
-            poster: movie.misc.image
-        },
+        backdrop: movie.misc.image,
+        poster: movie.misc.image,
         synopsis: metadata.description,
         subtitle: {}
     });
