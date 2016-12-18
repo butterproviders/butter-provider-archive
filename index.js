@@ -119,6 +119,12 @@ function formatArchiveForButter(movie) {
     var mp4s = _.filter(movie.files, function (file, k) {
         return k.endsWith('.mp4');
     });
+
+    if (!mp4s.length) {
+        console.error('couldnt find any valid file in this...', movie);
+        return null;
+    }
+
     var runtime = Math.floor(
         moment.duration(Number(mp4s[0].length) * 1000).asMinutes()
     );
