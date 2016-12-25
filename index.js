@@ -1,6 +1,6 @@
 'use strict';
 var Q = require('q');
-var Generic = require('butter-provider');
+var Provider = require('butter-provider');
 var moment = require('moment');
 var deferRequest = require('defer-request');
 var inherits = require('util').inherits;
@@ -11,18 +11,17 @@ function Archive(args) {
         return new Archive(args);
     }
 
-    Generic.call(this, args);
+    Provider.call(this, args);
     this.baseUrl = this.args.baseUrl || 'https://archive.org/';
 }
-inherits(Archive, Generic);
+inherits(Archive, Provider);
 
 Archive.prototype.config = {
     name: 'archive',
     uniqueId: 'imdb_id',
     tabName: 'Archive.org',
-    type: Generic.TabType.MOVIE,
     args: {
-        baseUrl: Generic.ArgType.STRING
+        baseUrl: Provider.ArgType.STRING
     },
     /* should be removed */
     //subtitle: 'ysubs',
@@ -59,7 +58,7 @@ function formatOMDbforButter(movie) {
     movie.Quality = '480p'; // XXX
 
     return {
-        type: 'movie',
+        type: Provider.ItemType.MOVIE,
         aid: movie.archive.identifier,
         imdb: id,
         imdb_id: id,
