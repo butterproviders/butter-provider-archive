@@ -165,7 +165,7 @@ var queryTorrents = function (baseurl, filters) {
     };
 
     if (filters.keywords) {
-        params.keywords = filters.keywords.replace(/\s/g, '% ');
+        query += ' AND title:"' + filters.keywords + '"';
     }
 
     if (filters.genre) {
