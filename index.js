@@ -1,6 +1,5 @@
 'use strict';
 var Provider = require('butter-provider');
-var CacheProvider = require('butter-cache-provider-nedb');
 var moment = require('moment');
 var deferRequest = require('defer-request');
 var inherits = require('util').inherits;
@@ -10,7 +9,7 @@ function Archive() {
     Archive.super_.apply(this, arguments);
     this.baseUrl = this.args.baseUrl;
 }
-inherits(Archive, CacheProvider);
+inherits(Archive, Provider);
 
 Archive.prototype.config = {
     name: 'archive',
