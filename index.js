@@ -1,5 +1,4 @@
 'use strict';
-var Q = require('q');
 var Provider = require('butter-provider');
 var moment = require('moment');
 var deferRequest = require('defer-request');
@@ -20,7 +19,7 @@ Archive.prototype.config = {
         baseUrl: Provider.ArgType.STRING
     }, defaults: {
         baseUrl: 'https://archive.org/'
-    }
+    },
     /* should be removed */
     //subtitle: 'ysubs',
     metadata: 'trakttv:movie-metadata'
@@ -78,10 +77,6 @@ function formatDetails(movie, old) {
      *
      * We need all this because data doesn't come reliably tagged =/
      */
-    var mp4s = _.filter(movie.files, function (file, k) {
-        return k.endsWith('.mp4');
-    });
-
     var url = 'http://' + movie.server + movie.dir;
     var turl = '/' + id + '_archive.torrent';
     var torrentInfo = movie.files[turl];
@@ -113,9 +108,11 @@ function formatArchiveForButter(movie) {
      *
      * We need all this because data doesn't come reliably tagged =/
      */
-    var mp4s = _.filter(movie.files, function (file, k) {
+    var mp4s = Object.keys(movie.files).filter(function (k) {
         return k.endsWith('.mp4');
-    });
+    }).map(function(k) {
+        return movie.files[k];
+    })
 
     if (!mp4s.length) {
         console.error('couldnt find any valid file in this...', movie);
@@ -208,7 +205,7 @@ var queryDetails = function (id, movie) {
 
 var queryOMDb = function (item) {
     if (! item.title || ! item.title.replace)
-        return Q(false);
+        return Promise.reject(false);
 
     var params = {
         t: item.title.replace(/\s+\([0-9]+\)/, ''),
@@ -227,8 +224,7 @@ var queryOMDb = function (item) {
 };
 
 var queryOMDbBulk = function (items) {
-    var deferred = Q.defer();
-    var promises = _.map(items, function (item) {
+    var promises = items.map(function (item) {
         return queryOMDb(item)
             .then(formatOMDbforButter)
             .catch(function (err) {
@@ -238,18 +234,18 @@ var queryOMDbBulk = function (items) {
             });
     });
 
-    Q.all(promises).done(function (data) {
-        deferred.resolve({
-            hasMore: (data.length < 50),
-            results: data
-        });
+    return new Promise(function (resolve, reject) {
+        Promise.all(promises).done(function (data) {
+            resolve({
+                hasMore: (data.length < 50),
+                results: data
+            });
+        })
     });
-
-    return deferred.promise;
 };
 
 Archive.prototype.fetch = function (filters) {
-    return queryTorrents(this.baseUrl, filters)
+    return queryTorrents(this.baseUrl, filters || {})
         .then(queryOMDbBulk);
 };
 
