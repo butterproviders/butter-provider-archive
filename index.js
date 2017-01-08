@@ -6,13 +6,9 @@ var deferRequest = require('defer-request');
 var inherits = require('util').inherits;
 var _ = require('lodash');
 
-function Archive(args) {
-    if (!(this instanceof Archive)) {
-        return new Archive(args);
-    }
-
-    Provider.call(this, args);
-    this.baseUrl = this.args.baseUrl || 'https://archive.org/';
+function Archive() {
+    Archive.super_.apply(this, arguments);
+    this.baseUrl = this.args.baseUrl;
 }
 inherits(Archive, Provider);
 
@@ -22,7 +18,9 @@ Archive.prototype.config = {
     tabName: 'Archive.org',
     args: {
         baseUrl: Provider.ArgType.STRING
-    },
+    }, defaults: {
+        baseUrl: 'https://archive.org/'
+    }
     /* should be removed */
     //subtitle: 'ysubs',
     metadata: 'trakttv:movie-metadata'
@@ -128,7 +126,6 @@ function formatArchiveForButter(movie) {
         moment.duration(Number(mp4s[0].length) * 1000).asMinutes()
     );
 
-    console.error('formatArchiveForButter', runtime, movie);
     var year = exctractYear(movie);
     var rating = extractRating(movie);
 
@@ -201,7 +198,6 @@ var queryTorrents = function (baseurl, filters) {
 var queryDetails = function (id, movie) {
     id = movie.aid || id || movie.imdb;
     var url = 'https://archive.org/' + 'details/' + id + '?output=json';
-    console.info('Request to ARCHIVE.org API', url);
     return deferRequest(url).then(function (data) {
         return data;
     })
@@ -231,7 +227,6 @@ var queryOMDb = function (item) {
 };
 
 var queryOMDbBulk = function (items) {
-    console.error('before details', items);
     var deferred = Q.defer();
     var promises = _.map(items, function (item) {
         return queryOMDb(item)
@@ -244,7 +239,6 @@ var queryOMDbBulk = function (items) {
     });
 
     Q.all(promises).done(function (data) {
-        console.error('queryOMDbbulk', data);
         deferred.resolve({
             hasMore: (data.length < 50),
             results: data
