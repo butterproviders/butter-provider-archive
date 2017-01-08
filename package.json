@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/butterproviders/butter-provider-ccc#readme",
   "dependencies": {
+    "butter-cache-provider-nedb": "file:///home/xaiki/src/Butter/Providers/butter-cache-provider-nedb",
     "butter-provider": "^0.9.0",
     "defer-request": "0.0.2",
     "lodash": "^4.0.0",
-    "moment": "^2.11.1",
-    "q": "^1.4.1"
+    "moment": "^2.11.1"
   },
   "devDependencies": {
     "tape": "^4.5.1"
