@@ -236,7 +236,7 @@ var queryOMDbBulk = function (items) {
     });
 
     return new Promise(function (resolve, reject) {
-        Promise.all(promises).done(function (data) {
+        Promise.all(promises).then(function (data) {
             resolve({
                 hasMore: (data.length < 50),
                 results: data
