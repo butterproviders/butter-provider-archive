@@ -244,7 +244,11 @@ module.exports = class Archive extends Provider {
 
                                          return this.queryDetails(item.identifier, item)
                                                     .then(formatArchiveForButter)
-                                                    .catch((err) => (null))
+                                                    .catch((err) => {
+                                                        debug('ERR:', err)
+
+                                                        return null
+                                                    })
                                      })));
 
         return new Promise((resolve) => {
