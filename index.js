@@ -1,24 +1,21 @@
 'use strict';
+
 var Provider = require('butter-provider');
 var moment = require('moment');
-var deferRequest = require('defer-request');
-var inherits = require('util').inherits;
-var _ = require('lodash');
+var axios = require('axios');
+var debug = require('debug')('butter-provider-archive');
 
-function Archive() {
-    Archive.super_.apply(this, arguments);
-    this.baseUrl = this.args.baseUrl;
-}
-inherits(Archive, Provider);
-
-Archive.prototype.config = {
+const defaultConfig = {
     name: 'archive',
     uniqueId: 'imdb_id',
     tabName: 'Archive.org',
-    args: {
-        baseUrl: Provider.ArgType.STRING
-    }, defaults: {
-        baseUrl: 'https://archive.org/'
+    argTypes: {
+        baseUrl: Provider.ArgType.STRING,
+        timeout: Provider.ArgType.NUMBER
+    },
+    defaults: {
+        baseUrl: 'https://archive.org',
+        timeout: 10000
     },
     /* should be removed */
     //subtitle: 'ysubs',
@@ -27,11 +24,16 @@ Archive.prototype.config = {
 
 function exctractYear(movie) {
     var metadata = movie.metadata;
-    if (metadata.hasOwnProperty('year')) {
+
+    if (metadata.year) {
         return metadata.year[0];
-    } else if (metadata.hasOwnProperty('date')) {
+    }
+
+    if (metadata.date) {
         return metadata.date[0];
-    } else if (metadata.hasOwnProperty('addeddate')) {
+    }
+
+    if (metadata.addeddate) {
         return metadata.addeddate[0];
     }
 
@@ -39,11 +41,11 @@ function exctractYear(movie) {
 }
 
 function extractRating(movie) {
-    if (movie.hasOwnProperty('reviews')) {
+    if (movie.reviews) {
         return movie.reviews.info.avg_rating;
     }
 
-    return 0;
+    return 0
 }
 
 function formatOMDbforButter(movie) {
@@ -62,7 +64,7 @@ function formatOMDbforButter(movie) {
         title: movie.Title,
         genre: [movie.Genre],
         year: year,
-        rating: rating == 'N/A' ? undefined : rating,
+        rating: rating === 'N/A' ? null : rating,
         runtime: runtime,
         backdrop: null,
         poster: null,
@@ -77,8 +79,8 @@ function formatDetails(movie, old) {
      *
      * We need all this because data doesn't come reliably tagged =/
      */
-    var url = 'http://' + movie.server + movie.dir;
-    var turl = '/' + id + '_archive.torrent';
+    var url = `http://${movie.server}${movie.dir}`;
+    var turl = `/${id}_archive.torrent`;
     var torrentInfo = movie.files[turl];
 
     // Calc torrent health
@@ -108,20 +110,18 @@ function formatArchiveForButter(movie) {
      *
      * We need all this because data doesn't come reliably tagged =/
      */
-    var mp4s = Object.keys(movie.files).filter(function (k) {
-        return k.endsWith('.mp4');
-    }).map(function(k) {
-        return movie.files[k];
-    })
+    var mp4s = Object.keys(movie.files)
+                     .filter((k) => (k.endsWith('.mp4')))
+                     .map((k) => (movie.files[k]))
 
     if (!mp4s.length) {
-        console.error('couldnt find any valid file in this...', movie);
+        debug('couldnt find any valid file in this...', movie);
+
         return null;
     }
 
-    var runtime = Math.floor(
-        moment.duration(Number(mp4s[0].length) * 1000).asMinutes()
-    );
+    var runtime =
+        Math.floor(moment.duration(Number(mp4s[0].length) * 1000).asMinutes());
 
     var year = exctractYear(movie);
     var rating = extractRating(movie);
@@ -140,72 +140,10 @@ function formatArchiveForButter(movie) {
     });
 }
 
-var queryTorrents = function (baseurl, filters) {
-    var query = 'collection:moviesandfilms'; // OR mediatype:movies)';
-    query += ' AND NOT collection:movie_trailers';
-    query += ' AND -mediatype:collection';
-    query += ' AND format:"Archive BitTorrent"';
-    query += ' AND year'; // this is actually: has year
-    //        query += ' AND avg_rating';
-
-    var URL = baseurl + 'advancedsearch.php';
-    var sort = 'downloads';
-    //var sort = 'avg_rating';
-
-    var params = {
-        output: 'json',
-        rows: '50',
-        q: query
-    };
-
-    if (filters.keywords) {
-        query += ' AND title:"' + filters.keywords + '"';
+function queryOMDb (item, axiosOptions) {
+    if (!item.title || !item.title.replace) {
+        return Promise.reject(new Error('Not Found'));
     }
-
-    if (filters.genre) {
-        params.genre = filters.genre;
-    }
-
-    var order = 'desc';
-    if (filters.order) {
-        if (filters.order === 1) {
-            order = 'asc';
-        }
-    }
-
-    if (filters.sorter && filters.sorter !== 'popularity') {
-        sort = filters.sorter;
-    }
-
-    sort += '+' + order;
-
-    if (filters.page) {
-        params.page = filters.page;
-    }
-
-    return deferRequest(URL + '?sort[]=' + sort, params, true)
-        .then(function (data) {
-            return data.response.docs;
-        })
-        .catch(function (err) {
-            console.error('ARCHIVE.org error:', err);
-        });
-};
-
-var queryDetails = function (id, movie) {
-    id = movie.aid || id || movie.imdb;
-    var url = 'https://archive.org/' + 'details/' + id + '?output=json';
-    return deferRequest(url).then(function (data) {
-        return data;
-    })
-        .catch(function (err) {
-            console.error('Archive.org error', err);
-        });
-};
-
-var queryOMDb = function (item) {
-    if (! item.title || ! item.title.replace)
-        return Promise.reject(false);
 
     var params = {
         t: item.title.replace(/\s+\([0-9]+\)/, ''),
@@ -214,46 +152,119 @@ var queryOMDb = function (item) {
     };
 
     var url = 'http://www.omdbapi.com/';
-    return deferRequest(url, params).then(function (data) {
-        if (data.Error) {
-            throw new Error(data.Error);
-        }
-        data.archive = item;
-        return data;
-    });
-};
 
-var queryOMDbBulk = function (items) {
-    var promises = items.map(function (item) {
-        return queryOMDb(item)
-            .then(formatOMDbforButter)
-            .catch(function (err) {
-                console.warn('no data on OMDB, going back to archive', err, item);
-                return queryDetails(item.identifier, item)
-                    .then(formatArchiveForButter);
-            });
-    });
+    return axios(url, Object.assign({}, axiosOptions, {params: params}))
+        .then((res) => {
+            if (res.data.Error) {
+                throw new Error(res.data.Error);
+            }
 
-    return new Promise(function (resolve, reject) {
-        Promise.all(promises).then(function (data) {
-            resolve({
-                hasMore: (data.length < 50),
-                results: data
-            });
-        })
-    });
-};
+            res.data.archive = item;
 
-Archive.prototype.fetch = function (filters) {
-    return queryTorrents(this.baseUrl, filters || {})
-        .then(queryOMDbBulk);
-};
-
-Archive.prototype.detail = function (torrent_id, old_data) {
-    return queryDetails(torrent_id, old_data)
-        .then(function (data) {
-            return formatDetails(data, old_data);
+            return res.data;
         });
-};
+}
 
-module.exports = Archive
+module.exports = class Archive extends Provider {
+    constructor (args, config = defaultConfig) {
+        super(args, config)
+
+        this.baseUrl = this.args.baseUrl;
+        this.axiosOptions = {
+            strictSSL: false,
+            json: true,
+            timeout: this.args.timeout
+        }
+    }
+
+    queryTorrents (filters = {}) {
+        var query = 'collection:moviesandfilms'; // OR mediatype:movies)';
+        query += ' AND NOT collection:movie_trailers';
+        query += ' AND -mediatype:collection';
+        query += ' AND format:"Archive BitTorrent"';
+        query += ' AND year'; // this is actually: has year
+        //        query += ' AND avg_rating';
+
+        var URL = `${this.baseUrl}/advancedsearch.php`;
+        var sort = 'downloads';
+        //var sort = 'avg_rating';
+
+        var params = {
+            output: 'json',
+            rows: '50',
+            q: query
+        };
+
+        if (filters.keywords) {
+            query += ` AND title:"${filters.keywords}"`;
+        }
+
+        if (filters.genre) {
+            params.genre = filters.genre;
+        }
+
+        var order = 'desc';
+        if (filters.order) {
+            if (filters.order === 1) {
+                order = 'asc';
+            }
+        }
+
+        if (filters.sorter && filters.sorter !== 'popularity') {
+            sort = filters.sorter;
+        }
+
+        sort += `+${order}`;
+
+        if (filters.page) {
+            params.page = filters.page;
+        }
+
+        return axios(
+            `${URL}?sort[]=${sort}`,
+            Object.assign({}, this.axiosOptions, {params: params})
+        ).then((res) => (res.data.response.docs))
+         .catch((err) => (debug('ARCHIVE.org error:', err)));
+    }
+
+    queryDetails (aid, movie) {
+        let id = movie.aid || aid || movie.imdb;
+        var url = `${this.baseUrl}/details/${id}?output=json`;
+
+        return axios(url, this.axiosOptions)
+            .then((res) => (res.data));
+    }
+
+    queryOMDbBulk (items) {
+        let promises =
+            items.map((item) => (queryOMDb(item, this.axiosOptions)
+                                     .then(formatOMDbforButter)
+                                     .catch((err) => {
+                                         debug('WARN: no data on OMDB, going back to archive', err, item);
+
+                                         return this.queryDetails(item.identifier, item)
+                                                    .then(formatArchiveForButter)
+                                                    .catch((err) => (null))
+                                     })));
+
+        return new Promise((resolve) => {
+            Promise.all(promises).then((data) => {
+                let filtredData = data.filter((m) => (m))
+                resolve({
+                    hasMore: (filtredData.length < 50),
+                    results: filtredData
+                });
+            })
+        });
+    }
+
+    fetch (filters = {}) {
+        return this.queryTorrents(filters)
+                   .then(this.queryOMDbBulk.bind(this));
+    }
+
+    detail (torrent_id, old_data) {
+        return this.queryDetails(torrent_id, old_data)
+            .then((data) => (formatDetails(data, old_data)));
+    }
+}

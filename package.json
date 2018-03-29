@@ -1,13 +1,14 @@
 {
   "name": "butter-provider-archive",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A Butter provider for Archive.org",
   "main": "index.js",
   "butter": {
-    "timeout": 20000
+    "timeout": 200000
   },
   "scripts": {
-    "test": "tape ./node_modules/butter-provider/tests/*"
+    "test": "mocha ./node_modules/butter-provider/tests/*",
+    "lint": "./node_modules/.bin/eslint tests/** index.js"
   },
   "repository": {
     "type": "git",
@@ -25,12 +26,15 @@
   },
   "homepage": "https://github.com/butterproviders/butter-provider-ccc#readme",
   "dependencies": {
-    "butter-provider": "^0.9.0",
-    "defer-request": "0.0.2",
-    "lodash": "^4.0.0",
+    "axios": "^0.18.0",
+    "butter-provider": "butterproviders/butter-provider",
+    "debug": "^3.1.0",
     "moment": "^2.11.1"
   },
   "devDependencies": {
-    "tape": "^4.5.1"
+    "chai": "^4.1.2",
+    "eslint": "^4.19.1",
+    "mocha": "^5.0.5",
+    "tape": "^4.9.0"
   }
 }
