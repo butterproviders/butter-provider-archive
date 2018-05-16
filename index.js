@@ -7,7 +7,6 @@ var debug = require('debug')('butter-provider-archive');
 
 const defaultConfig = {
     name: 'archive',
-    uniqueId: 'imdb_id',
     tabName: 'Archive.org',
     argTypes: {
         baseUrl: Provider.ArgType.STRING,
@@ -60,9 +59,9 @@ function formatOMDbforButter(movie) {
         type: Provider.ItemType.MOVIE,
         aid: movie.archive.identifier,
         imdb: id,
-        imdb_id: id,
+        id: id,
         title: movie.Title,
-        genre: [movie.Genre],
+        genres: [movie.Genre],
         year: year,
         rating: rating === 'N/A' ? null : rating,
         runtime: runtime,
@@ -129,14 +128,16 @@ function formatArchiveForButter(movie) {
     return formatDetails(movie, {
         type: 'movie',
         imdb: id,
+        id: id,
         title: metadata.title[0],
         year: year,
         rating: rating,
         runtime: runtime,
         backdrop: movie.misc.image,
         poster: movie.misc.image,
-        synopsis: metadata.description,
-        subtitle: {}
+        synopsis: metadata.description[0],
+        subtitle: {},
+        genres: ['unknown']
     });
 }
 
